@@ -397,6 +397,7 @@ class WC_API {
 		include_once( 'api/class-wc-rest-report-sales-controller.php' );
 		include_once( 'api/class-wc-rest-report-top-sellers-controller.php' );
 		include_once( 'api/class-wc-rest-reports-controller.php' );
+		include_once( 'api/class-wc-rest-shipping-zones-controller.php' );
 		include_once( 'api/class-wc-rest-tax-classes-controller.php' );
 		include_once( 'api/class-wc-rest-taxes-controller.php' );
 		include_once( 'api/class-wc-rest-webhook-deliveries.php' );
