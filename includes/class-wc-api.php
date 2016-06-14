@@ -191,6 +191,7 @@ class WC_API extends WC_Legacy_API {
 			'WC_REST_Report_Sales_Controller',
 			'WC_REST_Report_Top_Sellers_Controller',
 			'WC_REST_Reports_Controller',
+			'WC_REST_Shipping_Zones_Controller',
 			'WC_REST_Tax_Classes_Controller',
 			'WC_REST_Taxes_Controller',
 			'WC_REST_Webhook_Deliveries_Controller',
