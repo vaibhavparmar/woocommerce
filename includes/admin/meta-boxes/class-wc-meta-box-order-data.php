@@ -265,8 +265,8 @@ class WC_Meta_Box_Order_Data {
 
 									$field_name = 'billing_' . $key;
 
-									if ( is_callable( array( $order, "get_{$field_name}" ) ) ) {
-										echo '<p><strong>' . esc_html( $field['label'] ) . ':</strong> ' . make_clickable( esc_html( $order->{"get_{$field_name}"}() ) ) . '</p>';
+									if ( is_callable( array( $order, "get_{$field_name}" ) ) && ( $value = $order->{"get_{$field_name}"}() ) ) {
+										echo '<p><strong>' . esc_html( $field['label'] ) . ':</strong> ' . make_clickable( esc_html( $value ) ) . '</p>';
 									}
 								}
 
