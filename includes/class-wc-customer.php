@@ -1016,9 +1016,7 @@ class WC_Customer extends WC_Legacy_Customer {
 	 * @since 2.7.0
 	 */
 	public function save() {
-		if ( ! $this->_is_user ) {
-			$this->create();
-		} else {
+		if ( $this->_is_user ) {
 			if ( ! $this->get_id() ) {
 				$this->create();
 			} else {

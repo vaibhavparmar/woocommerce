@@ -221,4 +221,19 @@ abstract class WC_Legacy_Customer extends WC_Data {
 		$this->set_billing_city( $city );
 	}
 
+	/**
+	 * Legacy set city.
+	 */
+	function set_address( $city ) {
+		_deprecated_function( 'WC_Customer::set_address', '2.7', 'WC_Customer::set_billing_address' );
+		$this->set_billing_city( $city );
+	}
+
+	/**
+	 * Legacy set city.
+	 */
+	function set_address_2( $city ) {
+		_deprecated_function( 'WC_Customer::set_address_2', '2.7', 'WC_Customer::set_billing_address+2' );
+		$this->set_billing_city( $city );
+	}
 }
