@@ -17,7 +17,7 @@ include_once( 'abstract-wc-legacy-order.php' );
  * @category    Class
  * @author      WooThemes
  */
-abstract class WC_Abstract_Order extends WC_Abstract_Legacy_Order implements WC_Data {
+abstract class WC_Abstract_Order extends WC_Abstract_Legacy_Order {
 
 	/**
 	 * Order Data array, with defaults. This is the core order data exposed
@@ -52,11 +52,29 @@ abstract class WC_Abstract_Order extends WC_Abstract_Legacy_Order implements WC_
 	);
 
 	/**
-	 * Stores additonal meta data.
-	 * Order meta keys can be used once.
+	 * Data stored in meta keys, but not considered "meta" for an order.
+	 * @since 2.7.0
 	 * @var array
 	 */
-	protected $_meta_data = array();
+	protected $_internal_meta_keys = array(
+		'_customer_user', '_order_key', '_order_currency', '_cart_discount',
+		'_cart_discount_tax', '_order_shipping', '_order_shipping_tax',
+		'_order_tax', '_order_total', '_order_version', '_prices_include_tax',
+		'_payment_tokens',
+	);
+
+	/**
+	 *  Internal meta type used to store order data.
+	 * @var string
+	 */
+	protected $_meta_type = 'post';
+
+	/**
+	 * Stores meta in cache for future reads.
+	 * A group must be set to to enable caching.
+	 * @var string
+	 */
+	protected $_cache_group = 'order';
 
 	/**
 	 * Get the order if ID is passed, otherwise the order is new and empty.
@@ -74,14 +92,6 @@ abstract class WC_Abstract_Order extends WC_Abstract_Legacy_Order implements WC_
 		} elseif ( ! empty( $order->ID ) ) {
 			$this->read( absint( $order->ID ) );
 		}
-	}
-
-	/**
-	 * Change data to JSON format.
-	 * @return string Data in JSON format.
-	 */
-	public function __toString() {
-		return json_encode( $this->get_data() );
 	}
 
 	/*
@@ -148,10 +158,7 @@ abstract class WC_Abstract_Order extends WC_Abstract_Legacy_Order implements WC_
 			$this->update_post_meta( '_order_total', $this->get_total( true ) );
 			$this->update_post_meta( '_order_version', $this->get_version() );
 			$this->update_post_meta( '_prices_include_tax', $this->get_prices_include_tax() );
-
-			foreach ( $this->get_meta_data() as $key => $value ) {
-				$this->update_post_meta( '_' . $key, $value );
-			}
+			$this->save_meta_data();
 		}
 	}
 
@@ -235,10 +242,7 @@ abstract class WC_Abstract_Order extends WC_Abstract_Legacy_Order implements WC_
 		$this->update_post_meta( '_order_tax', $this->get_cart_tax( true ) );
 		$this->update_post_meta( '_order_total', $this->get_total( true ) );
 		$this->update_post_meta( '_prices_include_tax', $this->get_prices_include_tax() );
-
-		foreach ( $this->get_meta_data() as $key => $value ) {
-			$this->update_post_meta( '_' . $key, $value );
-		}
+		$this->save_meta_data();
 	}
 
 	/**
@@ -263,184 +267,10 @@ abstract class WC_Abstract_Order extends WC_Abstract_Legacy_Order implements WC_
 			$this->update();
 		}
 
-		$this->save_meta_data();
 		clean_post_cache( $this->get_id() );
 		wc_delete_shop_order_transients( $this->get_id() );
 
 		return $this->get_id();
-	}
-
-	/*
-	|--------------------------------------------------------------------------
-	| Meta Data Handling
-	|--------------------------------------------------------------------------
-	*/
-
-	/**
-	 * Get All Meta Data
-	 * @return array
-	 */
-	public function get_meta_data() {
-		return $this->_meta_data;
-	}
-
-	/**
-	 * Internal meta keys we don't want exposed as part of meta_data. This is in
-	 * addition to all data props with _ prefix.
-	 * @return array()
-	 */
-	protected function prefix_key( $key ) {
-		return '_' === substr( $key, 0, 1 ) ? $key : '_' . $key;
-	}
-
-	/**
-	 * Internal meta keys we don't want exposed as part of meta_data. This is in
-	 * addition to all data props with _ prefix.
-	 * @return array()
-	 */
-	protected function get_internal_meta_keys() {
-		return array_merge( array_map( array( $this, 'prefix_key' ), array_keys( $this->_data ) ), array( '_customer_user', '_order_key', '_order_currency', '_billing_first_name', '_billing_last_name', '_billing_company', '_billing_address_1', '_billing_address_2', '_billing_city', '_billing_state', '_billing_postcode', '_billing_country', '_billing_email', '_billing_phone', '_shipping_first_name', '_shipping_last_name', '_shipping_company', '_shipping_address_1', '_shipping_address_2', '_shipping_city', '_shipping_state', '_shipping_postcode', '_shipping_country', '_completed_date', '_paid_date', '_edit_lock', '_edit_last', '_cart_discount', '_cart_discount_tax', '_order_shipping', '_order_shipping_tax', '_order_tax', '_order_total', '_order_total', '_payment_method', '_payment_method_title', '_transaction_id', '_customer_ip_address', '_customer_user_agent', '_created_via', '_order_version', '_prices_include_tax', '_customer_note', '_date_completed', '_date_paid' ) );
-	}
-
-	/**
-	 * Get Meta Data by Key
-	 * @param string $key
-	 * @param bool $single return first found meta with key, or all with $key
-	 * @return mixed
-	 */
-	public function get_meta( $key = '', $single = true ) {
-		$meta_ids = array_keys( wp_list_pluck( $this->_meta_data, 'key' ), $key );
-		$value    = '';
-
-		if ( $meta_ids ) {
-			if ( $single ) {
-				$value = $this->_meta_data[ current( $meta_ids ) ]->value;
-			} else {
-				$value = array_intersect_key( $this->_meta_data, $meta_ids );
-			}
-		}
-
-		return $value;
-	}
-
-	/**
-	 * Set all meta data from array.
-	 * @param array $data Key/Value pairs
-	 */
-	public function set_meta_data( $data ) {
-		if ( ! empty( $data ) && is_array( $data ) ) {
-			foreach ( $data as $meta_id => $meta ) {
-				$meta = (array) $meta;
-				if ( isset( $meta['key'], $meta['value'] ) ) {
-					$this->_meta_data[ $meta_id ] = (object) array(
-						'key'   => $meta['key'],
-						'value' => $meta['value']
-					);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Add meta data.
-	 * @param array $key Meta key
-	 * @param array $value Meta value
-	 * @param array $unique Should this be a unique key?
-	 */
-	public function add_meta_data( $key, $value, $unique = false ) {
-		if ( $unique ) {
-			$meta_ids = array_keys( wp_list_pluck( $this->_meta_data, 'key' ), $key );
-			$this->_meta_data = array_diff_key( $this->_meta_data, array_fill_keys( $meta_ids, '' ) );
-		}
-		$this->_meta_data[ 'new-' . sizeof( $this->_meta_data ) ] = (object) array(
-			'key'   => $key,
-			'value' => $value,
-		);
-	}
-
-	/**
-	 * Update meta data by key or ID, if provided.
-	 * @param  string $key
-	 * @param  string $value
-	 * @param  int $meta_id
-	 */
-	public function update_meta_data( $key, $value, $meta_id = '' ) {
-		if ( $meta_id && isset( $this->_meta_data[ $meta_id ] ) ) {
-			$this->_meta_data[ $meta_id ] = (object) array(
-				'key'   => $key,
-				'value' => $value,
-			);
-		} else {
-			$this->add_meta_data( $key, $value, true );
-		}
-	}
-
-	/**
-	 * Delete meta data.
-	 * @param array $key Meta key
-	 */
-	public function delete_meta_data( $key ) {
-		$meta_ids         = array_keys( wp_list_pluck( $this->_meta_data, 'key' ), $key );
-		$this->_meta_data = array_diff_key( $this->_meta_data, array_fill_keys( $meta_ids, '' ) );
-	}
-
-	/**
-	 * Read Meta Data from the database. Ignore any internal properties.
-	 */
-	protected function read_meta_data() {
-		$this->_meta_data = array();
-
-		if ( ! $this->get_id() ) {
-			return;
-		}
-
-		$cache_key   = WC_Cache_Helper::get_cache_prefix( 'order_meta' ) . $this->get_id();
-		$cached_meta = wp_cache_get( $cache_key, 'order_meta' );
-
-		if ( false !== $cached_meta ) {
-			$this->_meta_data = $cached_meta;
-		} else {
-			global $wpdb;
-
-			$raw_meta_data = $wpdb->get_results( $wpdb->prepare( "SELECT meta_id, meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id = %d ORDER BY meta_id", $this->get_id() ) );
-
-			foreach ( $raw_meta_data as $meta ) {
-				if ( in_array( $meta->meta_key, $this->get_internal_meta_keys() ) ) {
-					continue;
-				}
-				$this->_meta_data[ $meta->meta_id ] = (object) array( 'key' => $meta->meta_key, 'value' => $meta->meta_value );
-			}
-
-			wp_cache_set( $cache_key, $this->_meta_data, 'order_meta' );
-		}
-	}
-
-	/**
-	 * Update Meta Data in the database.
-	 */
-	protected function save_meta_data() {
-		global $wpdb;
-		$all_meta_ids = array_map( 'absint', $wpdb->get_col( $wpdb->prepare( "SELECT meta_id FROM {$wpdb->postmeta} WHERE post_id = %d", $this->get_id() ) . " AND meta_key NOT IN ('" . implode( "','", array_map( 'esc_sql', $this->get_internal_meta_keys() ) ) . "');" ) );
-		$set_meta_ids = array();
-
-		foreach ( $this->_meta_data as $meta_id => $meta ) {
-			if ( 'new' === substr( $meta_id, 0, 3 ) ) {
-				$set_meta_ids[] = add_metadata( 'post', $this->get_id(), $meta->key, $meta->value, false );
-			} else {
-				update_metadata_by_mid( 'post', $meta_id, $meta->value, $meta->key );
-				$set_meta_ids[] = absint( $meta_id );
-			}
-		}
-
-		// Delete no longer set meta data
-		$delete_meta_ids = array_diff( $all_meta_ids, $set_meta_ids );
-
-		foreach ( $delete_meta_ids as $meta_id ) {
-			delete_metadata_by_mid( 'post', $meta_id );
-		}
-
-		WC_Cache_Helper::incr_cache_prefix( 'order_meta' );
-		$this->read_meta_data();
 	}
 
 	/*
@@ -1214,6 +1044,41 @@ abstract class WC_Abstract_Order extends WC_Abstract_Legacy_Order implements WC_
 		return $item->get_id();
 	}
 
+	/**
+	 * Add a payment token to an order
+	 *
+	 * @since 2.6
+	 * @param  WC_Payment_Token   $token     Payment token object
+	 * @return boolean|int The new token ID or false if it failed.
+	 */
+	public function add_payment_token( $token ) {
+		if ( empty( $token ) || ! ( $token instanceof WC_Payment_Token ) ) {
+			return false;
+		}
+
+		$token_ids = get_post_meta( $this->get_id(), '_payment_tokens', true );
+
+		if ( empty ( $token_ids ) ) {
+			$token_ids = array();
+		}
+
+		$token_ids[] = $token->get_id();
+
+		update_post_meta( $this->get_id(), '_payment_tokens', $token_ids );
+		do_action( 'woocommerce_payment_token_added_to_order', $this->get_id(), $token->get_id(), $token, $token_ids );
+		return $token->get_id();
+	}
+
+	/**
+	 * Returns a list of all payment tokens associated with the current order
+	 *
+	 * @since 2.6
+	 * @return array An array of payment token objects
+	 */
+	public function get_payment_tokens() {
+		return WC_Payment_Tokens::get_order_tokens( $this->get_id() );
+	}
+
 	/*
 	|--------------------------------------------------------------------------
 	| Calculations.
@@ -1816,38 +1681,5 @@ abstract class WC_Abstract_Order extends WC_Abstract_Legacy_Order implements WC_
 			}
 		}
 		return false;
-	}
-
-	/**
-	 * Returns a list of all payment tokens associated with the current order
-	 *
-	 * @since 2.6
-	 * @return array An array of payment token objects
-	 */
-	public function get_payment_tokens() {
-		return WC_Payment_Tokens::get_order_tokens( $this->id );
-	}
-
-	/**
-	 * Add a payment token to an order
-	 *
-	 * @since 2.6
-	 * @param  WC_Payment_Token   $token     Payment token object
-	 * @return boolean True if the token was added, false if not
-	 */
-	public function add_payment_token( $token ) {
-		if ( empty( $token ) || ! ( $token instanceof WC_Payment_Token ) ) {
-			return false;
-		}
-
-		$token_ids = get_post_meta( $this->id, '_payment_tokens', true );
-		if ( empty ( $token_ids ) ) {
-			$token_ids = array();
-		}
-		$token_ids[] = $token->get_id();
-
-		update_post_meta( $this->id, '_payment_tokens', $token_ids );
-		do_action( 'woocommerce_payment_token_added_to_order', $this->id, $token->get_id(), $token, $token_ids );
-		return true;
 	}
 }

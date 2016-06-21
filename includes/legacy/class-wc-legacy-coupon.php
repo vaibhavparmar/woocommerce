@@ -54,7 +54,7 @@ abstract class WC_Legacy_Coupon extends WC_Data {
 				$legacy_custom_fields = array();
 				$custom_fields = $this->get_id() ? $this->get_meta_data() : array();
 				if ( ! empty( $custom_fields ) ) {
-					foreach ( $custom_fields as  $cf_value ) {
+					foreach ( $custom_fields as $cf_value ) {
 						// legacy only supports 1 key
 						$legacy_custom_fields[ $cf_value->key ][0] = $cf_value->value;
 					}

@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @category	Abstract Class
  * @author	  WooThemes
  */
-abstract class WC_Abstract_Legacy_Order {
+abstract class WC_Abstract_Legacy_Order extends WC_Data {
 
 	/**
 	 * Update a line item for the order.
@@ -483,9 +483,16 @@ abstract class WC_Abstract_Legacy_Order {
 	 * @return array of objects
 	 */
 	public function get_item_meta_array( $order_item_id ) {
-		_deprecated_function( 'get_item_meta_array', '2.7', 'WC_Order_Item::get_meta_data()' );
-		$item = $this->get_item( $order_item_id );
-		return $item->get_meta_data();
+		_deprecated_function( 'get_item_meta_array', '2.7', 'WC_Order_Item::get_meta_data() (note the format has changed)' );
+		$item            = $this->get_item( $order_item_id );
+		$meta_data       = $item->get_meta_data();
+		$item_meta_array = array();
+
+		foreach ( $meta_data as $meta ) {
+			$item_meta_array[ $meta->meta_id ] = $meta;
+		}
+		
+		return $item_meta_array;
 	}
 
 	/**
@@ -608,5 +615,14 @@ abstract class WC_Abstract_Legacy_Order {
 	 */
 	public function email_order_items_table( $args = array() ) {
 		return wc_get_email_order_items( $this, $args );
+	}
+
+	/**
+	 * Get currency.
+	 * @deprecated 2.7.0
+	 */
+	public function get_order_currency() {
+		_deprecated_function( 'get_order_currency', '2.7', 'get_currency' );
+		return $this->get_currency();
 	}
 }

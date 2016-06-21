@@ -129,7 +129,7 @@ class WC_REST_Orders_Controller extends WC_REST_Posts_Controller {
 			'parent_id'            => $post->post_parent,
 			'status'               => $order->get_status(),
 			'order_key'            => $order->order_key,
-			'currency'             => $order->get_order_currency(),
+			'currency'             => $order->get_currency(),
 			'version'              => $order->order_version,
 			'prices_include_tax'   => $order->prices_include_tax,
 			'date_created'         => wc_rest_prepare_date_response( $post->post_date_gmt ),

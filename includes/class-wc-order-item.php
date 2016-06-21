@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @package     WooCommerce/Classes
  * @author      WooThemes
  */
-class WC_Order_Item implements ArrayAccess, WC_Data {
+class WC_Order_Item extends WC_Data implements ArrayAccess {
 
 	/**
 	 * Data array, with defaults.
@@ -29,10 +29,18 @@ class WC_Order_Item implements ArrayAccess, WC_Data {
 	);
 
 	/**
-	 * Stores additonal meta data.
-	 * @var array
+	 * Stores meta in cache for future reads.
+	 * A group must be set to to enable caching.
+	 * @var string
 	 */
-	protected $_meta_data = array();
+	protected $_cache_group = 'order_itemmeta';
+
+	/**
+	 * Meta type. This should match up with
+	 * the types avaiable at https://codex.wordpress.org/Function_Reference/add_metadata.
+	 * WP defines 'post', 'user', 'comment', and 'term'.
+	 */
+	protected $_meta_type = 'order_item';
 
 	/**
 	 * Constructor.
@@ -59,22 +67,10 @@ class WC_Order_Item implements ArrayAccess, WC_Data {
 		foreach ( $data as $key => $value ) {
 			if ( is_callable( array( $this, "set_$key" ) ) ) {
 				$this->{"set_$key"}( $value );
-			} elseif ( 'meta_data' !== $key ) {
-				$this->_data[ $key ] = $value;
 			} else {
-				foreach ( $value as $meta_id => $meta ) {
-					$this->_meta_data[ $meta_id ] = $meta;
-				}
+				$this->_data[ $key ] = $value;
 			}
 		}
-	}
-
-	/**
-	 * Change data to JSON format.
-	 * @return string Data in JSON format.
-	 */
-	public function __toString() {
-		return json_encode( $this->get_data() );
 	}
 
 	/**
@@ -99,15 +95,6 @@ class WC_Order_Item implements ArrayAccess, WC_Data {
 	| Getters
 	|--------------------------------------------------------------------------
 	*/
-
-	/**
-	 * Get all class data in array format.
-	 * @since 2.7.0
-	 * @return array
-	 */
-	public function get_data() {
-		return array_merge( $this->_data, array( 'meta_data' => $this->get_meta_data() ) );
-	}
 
 	/**
 	 * Get order item ID.
@@ -300,14 +287,6 @@ class WC_Order_Item implements ArrayAccess, WC_Data {
 	*/
 
 	/**
-	 * Get All Meta Data
-	 * @return array
-	 */
-	public function get_meta_data() {
-		return $this->_meta_data;
-	}
-
-	/**
 	 * Expands things like term slugs before return.
 	 * @param string $hideprefix (default: _)
 	 * @return array
@@ -316,7 +295,7 @@ class WC_Order_Item implements ArrayAccess, WC_Data {
 		$formatted_meta = array();
 		$meta_data      = $this->get_meta_data();
 
-		foreach ( $meta_data as $meta_id => $meta ) {
+		foreach ( $meta_data as $meta ) {
 			if ( "" === $meta->value || is_serialized( $meta->value ) || ( ! empty( $hideprefix ) && substr( $meta->key, 0, 1 ) === $hideprefix ) ) {
 				continue;
 			}
@@ -332,7 +311,7 @@ class WC_Order_Item implements ArrayAccess, WC_Data {
 				}
 			}
 
-			$formatted_meta[ $meta_id ] = (object) array(
+			$formatted_meta[ $meta->meta_id ] = (object) array(
 				'key'           => $meta->key,
 				'value'         => $meta->key,
 				'display_key'   => apply_filters( 'woocommerce_order_item_display_meta_key', $display_key ),
@@ -341,155 +320,6 @@ class WC_Order_Item implements ArrayAccess, WC_Data {
 		}
 
 		return $formatted_meta;
-	}
-
-	/**
-	 * Internal meta keys we don't want exposed as part of meta_data.
-	 * @return array()
-	 */
-	protected function get_internal_meta_keys() {
-		return array();
-	}
-
-	/**
-	 * Get Meta Data by Key
-	 * @param string $key
-	 * @param bool $single return first found meta with key, or all with $key
-	 * @return mixed
-	 */
-	public function get_meta( $key = '', $single = true ) {
-		$meta_ids = array_keys( wp_list_pluck( $this->_meta_data, 'key' ), $key );
-		$value    = '';
-
-		if ( $meta_ids ) {
-			if ( $single ) {
-				$value   = $this->_meta_data[ current( $meta_ids ) ]->value;
-			} else {
-				$value = array_intersect_key( $this->_meta_data, $meta_ids );
-			}
-		}
-
-		return $value;
-	}
-
-	/**
-	 * Set all meta data from array.
-	 * @param array $data Key/Value pairs
-	 */
-	public function set_meta_data( $data ) {
-		if ( ! empty( $data ) && is_array( $data ) ) {
-			foreach ( $data as $meta_id => $meta ) {
-				$meta = (array) $meta;
-				if ( isset( $meta['key'], $meta['value'] ) ) {
-					$this->_meta_data[ $meta_id ] = (object) array(
-						'key'   => $meta['key'],
-						'value' => $meta['value']
-					);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Add meta data.
-	 * @param array $key Meta key
-	 * @param array $value Meta value
-	 * @param array $unique Should this be a unique key?
-	 */
-	public function add_meta_data( $key, $value, $unique = false ) {
-		if ( $unique ) {
-			$meta_ids = array_keys( wp_list_pluck( $this->_meta_data, 'key' ), $key );
-			$this->_meta_data = array_diff_key( $this->_meta_data, array_fill_keys( $meta_ids, '' ) );
-		}
-		$this->_meta_data[ 'new-' . sizeof( $this->_meta_data ) ] = (object) array(
-			'key'   => $key,
-			'value' => $value
-		);
-	}
-
-	/**
-	 * Update meta data by key or ID, if provided.
-	 * @param  string $key
-	 * @param  string $value
-	 * @param  int $meta_id
-	 */
-	public function update_meta_data( $key, $value, $meta_id = '' ) {
-		if ( $meta_id && isset( $this->_meta_data[ $meta_id ] ) ) {
-			$this->_meta_data[ $meta_id ] = (object) array(
-				'key'   => $key,
-				'value' => $value
-			);
-		} else {
-			$this->add_meta_data( $key, $value, true );
-		}
-	}
-
-	/**
-	 * Delete meta data.
-	 * @param array $key Meta key
-	 */
-	public function delete_meta_data( $key ) {
-		$meta_ids         = array_keys( wp_list_pluck( $this->_meta_data, 'key' ), $key );
-		$this->_meta_data = array_diff_key( $this->_meta_data, array_fill_keys( $meta_ids, '' ) );
-	}
-
-	/**
-	 * Read Meta Data from the database. Ignore any internal properties.
-	 */
-	protected function read_meta_data() {
-		$this->_meta_data = array();
-
-		if ( ! $this->get_id() ) {
-			return;
-		}
-
-		$cache_key   = WC_Cache_Helper::get_cache_prefix( 'order_itemmeta' ) . $this->get_id();
-		$cached_meta = wp_cache_get( $cache_key, 'order_itemmeta' );
-
-		if ( false !== $cached_meta ) {
-			$this->_meta_data = $cached_meta;
-		} else {
-			global $wpdb;
-
-			$raw_meta_data = $wpdb->get_results( $wpdb->prepare( "SELECT meta_id, meta_key, meta_value FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE order_item_id = %d ORDER BY meta_id", $this->get_id() ) );
-
-			foreach ( $raw_meta_data as $meta ) {
-				if ( in_array( $meta->meta_key, $this->get_internal_meta_keys() ) ) {
-					continue;
-				}
-				$this->_meta_data[ $meta->meta_id ] = (object) array( 'key' => $meta->meta_key, 'value' => $meta->meta_value );
-			}
-
-			wp_cache_set( $cache_key, $this->_meta_data, 'order_itemmeta' );
-		}
-	}
-
-	/**
-	 * Update Meta Data in the database.
-	 */
-	protected function save_meta_data() {
-		global $wpdb;
-		$all_meta_ids = array_map( 'absint', $wpdb->get_col( $wpdb->prepare( "SELECT meta_id FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE order_item_id = %d", $this->get_id() ) . " AND meta_key NOT IN ('" . implode( "','", array_map( 'esc_sql', $this->get_internal_meta_keys() ) ) . "');" ) );
-		$set_meta_ids = array();
-
-		foreach ( $this->_meta_data as $meta_id => $meta ) {
-			if ( 'new' === substr( $meta_id, 0, 3 ) ) {
-				$set_meta_ids[] = add_metadata( 'order_item', $this->get_id(), $meta->key, $meta->value, false );
-			} else {
-				update_metadata_by_mid( 'order_item', $meta_id, $meta->value, $meta->key );
-				$set_meta_ids[] = absint( $meta_id );
-			}
-		}
-
-		// Delete no longer set meta data
-		$delete_meta_ids = array_diff( $all_meta_ids, $set_meta_ids );
-
-		foreach ( $delete_meta_ids as $meta_id ) {
-			delete_metadata_by_mid( 'order_item', $meta_id );
-		}
-
-		WC_Cache_Helper::incr_cache_prefix( 'order_itemmeta' );
-		$this->read_meta_data();
 	}
 
 	/*
@@ -508,7 +338,9 @@ class WC_Order_Item implements ArrayAccess, WC_Data {
 	 */
 	public function offsetSet( $offset, $value ) {
 		if ( 'item_meta_array' === $offset ) {
-			$this->_meta_data = $value;
+			foreach ( $value as $meta_id => $meta ) {
+				$this->update_meta_data( $meta->key, $meta->value, $meta_id );
+			}
 			return;
 		}
 
@@ -555,7 +387,13 @@ class WC_Order_Item implements ArrayAccess, WC_Data {
 	 */
 	public function offsetGet( $offset ) {
 		if ( 'item_meta_array' === $offset ) {
-			return $this->_meta_data;
+			$return = array();
+
+			foreach ( $this->_meta_data as $meta ) {
+				$return[ $meta->meta_id ] = $meta;
+			}
+
+			return $return;
 		}
 
 		$meta_values = wp_list_pluck( $this->_meta_data, 'value', 'key' );

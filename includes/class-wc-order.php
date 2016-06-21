@@ -18,6 +18,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WC_Order extends WC_Abstract_Order {
 
 	/**
+	 * Data stored in meta keys, but not considered "meta" for an order.
+	 * @since 2.7.0
+	 * @var array
+	 */
+	protected $_internal_meta_keys = array(
+		'_customer_user', '_order_key', '_order_currency', '_billing_first_name',
+		'_billing_last_name', '_billing_company', '_billing_address_1', '_billing_address_2',
+		'_billing_city', '_billing_state', '_billing_postcode', '_billing_country',
+		'_billing_email', '_billing_phone', '_shipping_first_name', '_shipping_last_name',
+		'_shipping_company', '_shipping_address_1', '_shipping_address_2', '_shipping_city',
+		'_shipping_state', '_shipping_postcode', '_shipping_country', '_completed_date',
+		'_paid_date', '_edit_lock', '_edit_last', '_cart_discount', '_cart_discount_tax',
+		'_order_shipping', '_order_shipping_tax', '_order_tax', '_order_total', '_order_total',
+		'_payment_method', '_payment_method_title', '_transaction_id', '_customer_ip_address',
+		'_customer_user_agent', '_created_via', '_order_version', '_prices_include_tax',
+		'_customer_note', '_date_completed', '_date_paid', '_payment_tokens',
+	);
+
+	/**
 	 * Stores data about status changes so relevant hooks can be fired.
 	 * @var bool|array
 	 */

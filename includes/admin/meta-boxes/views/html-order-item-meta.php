@@ -2,9 +2,9 @@
 	<?php
 		global $wpdb;
 
-		if ( $metadata = $item->get_meta_data() ) {
+		if ( $meta_data = $item->get_meta_data() ) {
 			echo '<table cellspacing="0" class="display_meta">';
-			foreach ( $metadata as $meta_id => $meta ) {
+			foreach ( $metadata as $meta ) {
 
 				// Skip hidden core fields
 				if ( in_array( $meta->key, apply_filters( 'woocommerce_hidden_order_itemmeta', array(
@@ -48,7 +48,7 @@
 		<tbody class="meta_items">
 		<?php
 			if ( $metadata = $item->get_meta_data() ) {
-				foreach ( $metadata as $meta_id => $meta ) {
+				foreach ( $metadata as $meta ) {
 
 					// Skip hidden core fields
 					if ( in_array( $meta->key, apply_filters( 'woocommerce_hidden_order_itemmeta', array(
@@ -75,7 +75,7 @@
 					$meta->key   = rawurldecode( $meta->key );
 					$meta->value = esc_textarea( rawurldecode( $meta->value ) ); // using a <textarea />
 
-					echo '<tr data-meta_id="' . esc_attr( $meta_id ) . '">
+					echo '<tr data-meta_id="' . esc_attr( $meta->meta_id ) . '">
 						<td>
 							<input type="text" name="key[' . esc_attr( $item->get_id() ) . '][' . esc_attr( $meta_id ) . ']" value="' . esc_attr( $meta->key ) . '" />
 							<textarea name="value[' . esc_attr( $item->get_id() ) . '][' . esc_attr( $meta_id ) . ']">' . $meta->value . '</textarea>
