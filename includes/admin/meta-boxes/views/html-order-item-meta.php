@@ -30,11 +30,11 @@
 
 				// Get attribute data
 				if ( taxonomy_exists( wc_sanitize_taxonomy_name( $meta->key ) ) ) {
-					$term               = get_term_by( 'slug', $meta->value, wc_sanitize_taxonomy_name( $meta->key ) );
+					$term        = get_term_by( 'slug', $meta->value, wc_sanitize_taxonomy_name( $meta->key ) );
 					$meta->key   = wc_attribute_label( wc_sanitize_taxonomy_name( $meta->key ) );
 					$meta->value = isset( $term->name ) ? $term->name : $meta->value;
 				} else {
-					$meta->key   = apply_filters( 'woocommerce_attribute_label', wc_attribute_label( $meta->key, $_product ), $meta->key );
+					$meta->key   = wc_attribute_label( $meta->key, $_product );
 				}
 
 				echo '<tr><th>' . wp_kses_post( rawurldecode( $meta->key ) ) . ':</th><td>' . wp_kses_post( wpautop( make_clickable( rawurldecode( $meta->value ) ) ) ) . '</td></tr>';

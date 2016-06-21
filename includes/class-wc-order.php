@@ -140,7 +140,7 @@ class WC_Order extends WC_Abstract_Order {
 				$tax_string_array[] = sprintf( '%s %s', wc_price( $tax_amount, array( 'currency' => $this->get_currency() ) ), WC()->countries->tax_or_vat() );
 			}
 			if ( ! empty( $tax_string_array ) ) {
-				$tax_string = ' ' . sprintf( __( '(Includes %s)', 'woocommerce' ), implode( ', ', $tax_string_array ) );
+				$tax_string = ' ' . sprintf( __( '(includes %s)', 'woocommerce' ), implode( ', ', $tax_string_array ) );
 			}
 		}
 
@@ -265,8 +265,6 @@ class WC_Order extends WC_Abstract_Order {
 	 * @since 2.7.0
 	 */
 	public function update() {
-		parent::update();
-
 		// Store additonal order data
 		$this->update_post_meta( '_billing_first_name', $this->get_billing_first_name() );
 		$this->update_post_meta( '_billing_last_name', $this->get_billing_last_name() );
@@ -299,6 +297,31 @@ class WC_Order extends WC_Abstract_Order {
 		$this->update_post_meta( '_date_paid', $this->get_date_paid() );
 		$this->update_post_meta( '_cart_hash', $this->get_cart_hash() );
 
+		$customer_changed = $this->update_post_meta( '_customer_user', $this->get_customer_id() );
+
+		// Update parent
+		parent::update();
+
+		// If customer changed, update any downloadable permissions
+		if ( $customer_changed ) {
+			$wpdb->update( $wpdb->prefix . "woocommerce_downloadable_product_permissions",
+				array(
+					'user_id'    => $this->get_customer_id(),
+					'user_email' => $this->get_billing_email(),
+				),
+				array(
+					'order_id'   => $this->get_id(),
+				),
+				array(
+					'%d',
+					'%s',
+				),
+				array(
+					'%d',
+				)
+			);
+		}
+
 		// Handle status change
 		$this->status_transition();
 	}
@@ -308,7 +331,7 @@ class WC_Order extends WC_Abstract_Order {
 	 * @since 2.7.0
 	 * @param string $new_status Status to change the order to. No internal wc- prefix is required.
 	 * @param string $note (default: '') Optional note to add.
-	 * @param bool $manual is this a manual order status change?
+	 * @param bool $manual_update is this a manual order status change?
 	 * @param array details of change
 	 */
 	public function set_status( $new_status, $note = '', $manual_update = false ) {
@@ -321,6 +344,10 @@ class WC_Order extends WC_Abstract_Order {
 				'note'   => $note,
 				'manual' => (bool) $manual_update,
 			);
+
+			if ( 'pending' === $result['from'] && ! $manual_update ) {
+				$this->set_date_paid( current_time( 'timestamp' ) );
+			}
 
 			if ( 'completed' === $result['to'] ) {
 				$this->set_date_completed( current_time( 'timestamp' ) );
@@ -854,14 +881,17 @@ class WC_Order extends WC_Abstract_Order {
 	/**
 	 * Set the payment method.
 	 * @since 2.2.0
-	 * @param string $value Supports WC_Payment_Gateway for bw compatibility with < 2.7
+	 * @param string $payment_method Supports WC_Payment_Gateway for bw compatibility with < 2.7
 	 */
-	public function set_payment_method( $value ) {
-		if ( is_object( $value ) ) {
-			$this->set_payment_method( $value->id );
-			$this->set_payment_method_title( $value->get_title() );
+	public function set_payment_method( $payment_method = '' ) {
+		if ( is_object( $payment_method ) ) {
+			$this->set_payment_method( $payment_method->id );
+			$this->set_payment_method_title( $payment_method->get_title() );
+		} elseif ( '' === $payment_method ) {
+			$this->_data['payment_method']       = '';
+			$this->_data['payment_method_title'] = '';
 		} else {
-			$this->_data['payment_method'] = $value;
+			$this->_data['payment_method']       = $payment_method;
 		}
 	}
 
@@ -1220,22 +1250,15 @@ class WC_Order extends WC_Abstract_Order {
 	 * @return array of WC_Order_Refund objects
 	 */
 	public function get_refunds() {
-		$refunds      = array();
-		$refund_items = get_posts(
-			array(
-				'post_type'      => 'shop_order_refund',
-				'post_parent'    => $this->get_id(),
-				'posts_per_page' => -1,
-				'post_status'    => 'any',
-				'fields'         => 'ids'
-			)
-		);
-
-		foreach ( $refund_items as $refund_id ) {
-			$refunds[] = new WC_Order_Refund( $refund_id );
+		if ( empty( $this->refunds ) && ! is_array( $this->refunds ) ) {
+			$this->refunds = wc_get_orders( array(
+				'type'   => 'shop_order_refund',
+				'parent' => $this->id,
+				'limit'  => -1,
+			) );
 		}
 
-		return $refunds;
+		return $this->refunds;
 	}
 
 	/**

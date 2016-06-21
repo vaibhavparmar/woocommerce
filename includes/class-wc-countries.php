@@ -64,7 +64,7 @@ class WC_Countries {
 	/**
 	 * Get continent code for a country code.
 	 * @since 2.6.0
-	 * @param $cc string
+	 * @param string $cc string
 	 * @return string
 	 */
 	public function get_continent_code_for_country( $cc ) {
@@ -116,7 +116,7 @@ class WC_Countries {
 		// Load only the state files the shop owner wants/needs.
 		$allowed = array_merge( $this->get_allowed_countries(), $this->get_shipping_countries() );
 
-		if ( $allowed ) {
+		if ( ! empty( $allowed ) ) {
 			foreach ( $allowed as $code => $country ) {
 				if ( ! isset( $states[ $code ] ) && file_exists( WC()->plugin_path() . '/i18n/states/' . $code . '.php' ) ) {
 					include( WC()->plugin_path() . '/i18n/states/' . $code . '.php' );
@@ -183,8 +183,22 @@ class WC_Countries {
 	 * @return array
 	 */
 	public function get_allowed_countries() {
-		if ( get_option( 'woocommerce_allowed_countries' ) !== 'specific' ) {
+		if ( 'all' === get_option( 'woocommerce_allowed_countries' ) ) {
 			return $this->countries;
+		}
+
+		if( 'all_except' === get_option( 'woocommerce_allowed_countries' ) ) {
+			$except_countries = get_option( 'woocommerce_all_except_countries', array() );
+
+			if ( ! $except_countries ) {
+				return $this->countries;
+			} else {
+				$all_except_countries = $this->countries;
+				foreach( $except_countries as $country ) {
+					unset( $all_except_countries[ $country ] );
+				}
+				return apply_filters( 'woocommerce_countries_allowed_countries', $all_except_countries );
+			}
 		}
 
 		$countries = array();
@@ -205,11 +219,11 @@ class WC_Countries {
 	 * @return array
 	 */
 	public function get_shipping_countries() {
-		if ( get_option( 'woocommerce_ship_to_countries' ) == '' ) {
+		if ( '' === get_option( 'woocommerce_ship_to_countries' ) ) {
 			return $this->get_allowed_countries();
 		}
 
-		if ( get_option( 'woocommerce_ship_to_countries' ) !== 'specific' ) {
+		if ( 'all' === get_option( 'woocommerce_ship_to_countries' ) ) {
 			return $this->countries;
 		}
 
@@ -217,8 +231,10 @@ class WC_Countries {
 
 		$raw_countries = get_option( 'woocommerce_specific_ship_to_countries' );
 
-		foreach ( $raw_countries as $country ) {
-			$countries[ $country ] = $this->countries[ $country ];
+		if ( $raw_countries ) {
+			foreach ( $raw_countries as $country ) {
+				$countries[ $country ] = $this->countries[ $country ];
+			}
 		}
 
 		return apply_filters( 'woocommerce_countries_shipping_countries', $countries );
@@ -237,9 +253,11 @@ class WC_Countries {
 
 		$raw_countries = get_option( 'woocommerce_specific_allowed_countries' );
 
-		foreach ( $raw_countries as $country ) {
-			if ( isset( $this->states[ $country ] ) ) {
-				$states[ $country ] = $this->states[ $country ];
+		if ( $raw_countries ) {
+			foreach ( $raw_countries as $country ) {
+				if ( isset( $this->states[ $country ] ) ) {
+					$states[ $country ] = $this->states[ $country ];
+				}
 			}
 		}
 
@@ -263,9 +281,11 @@ class WC_Countries {
 
 		$raw_countries = get_option( 'woocommerce_specific_ship_to_countries' );
 
-		foreach ( $raw_countries as $country ) {
-			if ( ! empty( $this->states[ $country ] ) ) {
-				$states[ $country ] = $this->states[ $country ];
+		if ( $raw_countries ) {
+			foreach ( $raw_countries as $country ) {
+				if ( ! empty( $this->states[ $country ] ) ) {
+					$states[ $country ] = $this->states[ $country ];
+				}
 			}
 		}
 
@@ -381,7 +401,7 @@ class WC_Countries {
 	 * @return array
 	 */
 	public function get_address_formats() {
-		if ( ! $this->address_formats ) :
+		if ( empty( $this->address_formats ) ) {
 
 			// Common formats
 			$postcode_before_city = "{company}\n{name}\n{address_1}\n{address_2}\n{postcode} {city}\n{country}";
@@ -422,7 +442,7 @@ class WC_Countries {
 				'US' => "{name}\n{company}\n{address_1}\n{address_2}\n{city}, {state_code} {postcode}\n{country}",
 				'VN' => "{name}\n{company}\n{address_1}\n{city}\n{country}",
 			));
-		endif;
+		}
 
 		return $this->address_formats;
 	}
@@ -607,7 +627,7 @@ class WC_Countries {
 	 * @return array
 	 */
 	public function get_country_locale() {
-		if ( ! $this->locale ) {
+		if ( empty( $this->locale ) ) {
 
 			// Locale information used by the checkout
 			$this->locale = apply_filters( 'woocommerce_get_country_locale', array(
@@ -766,6 +786,12 @@ class WC_Countries {
 						'label'       => __( 'Province', 'woocommerce' ),
 					)
 				),
+				'IE' => array(
+					'postcode' => array(
+						'required' => false,
+						'label'    => __( 'Postcode', 'woocommerce' ),
+					),
+				),
 				'IS' => array(
 					'postcode_before_city' => true,
 					'state' => array(
@@ -803,8 +829,12 @@ class WC_Countries {
 					)
 				),
 				'NZ' => array(
+					'postcode' => array(
+						'label' => __( 'Postcode', 'woocommerce' )
+					),
 					'state' => array(
-						'required' => false
+						'required' => false,
+						'label'    => __( 'Region', 'woocommerce' )
 					)
 				),
 				'NO' => array(
@@ -978,7 +1008,7 @@ class WC_Countries {
 			$address_fields[ $type . $key ] = $value;
 
 			// Add email and phone after company or last
-			if ( $type == 'billing_' && ( 'company' === $key || ( ! array_key_exists( 'company', $fields ) && $key === end( $keys ) ) ) ) {
+			if ( 'billing_' === $type && ( 'company' === $key || ( ! array_key_exists( 'company', $fields ) && $key === end( $keys ) ) ) ) {
 				$address_fields['billing_email'] = array(
 					'label'        => __( 'Email Address', 'woocommerce' ),
 					'required'     => true,

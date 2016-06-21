@@ -33,6 +33,18 @@ class WC_Shipping_Legacy_Free_Shipping extends WC_Shipping_Method {
 	}
 
 	/**
+	 * Process and redirect if disabled.
+	 */
+	public function process_admin_options() {
+		parent::process_admin_options();
+
+		if ( 'no' === $this->settings[ 'enabled' ] ) {
+			wp_redirect( admin_url( 'admin.php?page=wc-settings&tab=shipping&section=options' ) );
+			exit;
+		}
+	}
+	
+	/**
 	 * Return the name of the option in the WP DB.
 	 * @since 2.6.0
 	 * @return string
@@ -154,7 +166,7 @@ class WC_Shipping_Legacy_Free_Shipping extends WC_Shipping_Method {
 
 			if ( $coupons = WC()->cart->get_coupons() ) {
 				foreach ( $coupons as $code => $coupon ) {
-					if ( $coupon->is_valid() && $coupon->enable_free_shipping() ) {
+					if ( $coupon->is_valid() && $coupon->get_free_shipping() ) {
 						$has_coupon = true;
 					}
 				}
@@ -208,10 +220,11 @@ class WC_Shipping_Legacy_Free_Shipping extends WC_Shipping_Method {
 	 */
 	public function calculate_shipping( $package = array() ) {
 		$args = array(
-			'id' 	=> $this->id,
-			'label' => $this->title,
-			'cost' 	=> 0,
-			'taxes' => false
+			'id' 	  => $this->id,
+			'label'   => $this->title,
+			'cost' 	  => 0,
+			'taxes'   => false,
+			'package' => $package,
 		);
 		$this->add_rate( $args );
 	}

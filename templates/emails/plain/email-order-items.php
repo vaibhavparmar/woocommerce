@@ -10,7 +10,7 @@
  * happen. When this occurs the version of the template file will be bumped and
  * the readme will list any important changes.
  *
- * @see 	    http://docs.woothemes.com/document/template-structure/
+ * @see 	    https://docs.woothemes.com/document/template-structure/
  * @author 		WooThemes
  * @package 	WooCommerce/Templates/Emails/Plain
  * @version     2.6.0
@@ -35,7 +35,7 @@ foreach ( $items as $item_id => $item ) :
 		echo ' = ' . $order->get_formatted_line_subtotal( $item ) . "\n";
 
 		// allow other plugins to add additional product information here
-		do_action( 'woocommerce_order_item_meta_start', $item_id, $item, $order );
+		do_action( 'woocommerce_order_item_meta_start', $item_id, $item, $order, $plain_text );
 
 		echo strip_tags( wc_display_item_meta( $item, array(
 			'before'    => "\n- ",
@@ -56,7 +56,7 @@ foreach ( $items as $item_id => $item ) :
 		}
 
 		// allow other plugins to add additional product information here
-		do_action( 'woocommerce_order_item_meta_end', $item_id, $item, $order );
+		do_action( 'woocommerce_order_item_meta_end', $item_id, $item, $order, $plain_text );
 	}
 
 	// Note

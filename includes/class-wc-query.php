@@ -13,8 +13,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'WC_Query' ) ) :
-
 /**
  * WC_Query Class.
  */
@@ -65,17 +63,18 @@ class WC_Query {
 			// Checkout actions.
 			'order-pay'          => get_option( 'woocommerce_checkout_pay_endpoint', 'order-pay' ),
 			'order-received'     => get_option( 'woocommerce_checkout_order_received_endpoint', 'order-received' ),
-
 			// My account actions.
-			'orders'             => get_option( 'woocommerce_myaccount_orders_endpoint', 'orders' ),
-			'view-order'         => get_option( 'woocommerce_myaccount_view_order_endpoint', 'view-order' ),
-			'downloads'          => get_option( 'woocommerce_myaccount_downloads_endpoint', 'downloads' ),
-			'edit-account'       => get_option( 'woocommerce_myaccount_edit_account_endpoint', 'edit-account' ),
-			'edit-address'       => get_option( 'woocommerce_myaccount_edit_address_endpoint', 'edit-address' ),
-			'payment-methods'    => get_option( 'woocommerce_myaccount_payment_methods_endpoint', 'payment-methods' ),
-			'lost-password'      => get_option( 'woocommerce_myaccount_lost_password_endpoint', 'lost-password' ),
-			'customer-logout'    => get_option( 'woocommerce_logout_endpoint', 'customer-logout' ),
-			'add-payment-method' => get_option( 'woocommerce_myaccount_add_payment_method_endpoint', 'add-payment-method' ),
+			'orders'                     => get_option( 'woocommerce_myaccount_orders_endpoint', 'orders' ),
+			'view-order'                 => get_option( 'woocommerce_myaccount_view_order_endpoint', 'view-order' ),
+			'downloads'                  => get_option( 'woocommerce_myaccount_downloads_endpoint', 'downloads' ),
+			'edit-account'               => get_option( 'woocommerce_myaccount_edit_account_endpoint', 'edit-account' ),
+			'edit-address'               => get_option( 'woocommerce_myaccount_edit_address_endpoint', 'edit-address' ),
+			'payment-methods'            => get_option( 'woocommerce_myaccount_payment_methods_endpoint', 'payment-methods' ),
+			'lost-password'              => get_option( 'woocommerce_myaccount_lost_password_endpoint', 'lost-password' ),
+			'customer-logout'            => get_option( 'woocommerce_logout_endpoint', 'customer-logout' ),
+			'add-payment-method'         => get_option( 'woocommerce_myaccount_add_payment_method_endpoint', 'add-payment-method' ),
+			'delete-payment-method'      => get_option( 'woocommerce_myaccount_delete_payment_method_endpoint', 'delete-payment-method' ),
+			'set-default-payment-method' => get_option( 'woocommerce_myaccount_set_default_payment_method_endpoint', 'set-default-payment-method' ),
 		);
 	}
 
@@ -109,10 +108,10 @@ class WC_Query {
 				$title = __( 'Downloads', 'woocommerce' );
 			break;
 			case 'edit-account' :
-				$title = __( 'Edit Account Details', 'woocommerce' );
+				$title = __( 'Account Details', 'woocommerce' );
 			break;
 			case 'edit-address' :
-				$title = __( 'Edit Address', 'woocommerce' );
+				$title = __( 'Addresses', 'woocommerce' );
 			break;
 			case 'payment-methods' :
 				$title = __( 'Payment Methods', 'woocommerce' );
@@ -258,7 +257,7 @@ class WC_Query {
 			define( 'SHOP_IS_ON_FRONT', true );
 
 			// Get the actual WP page to avoid errors and let us use is_front_page()
-			// This is hacky but works. Awaiting http://core.trac.wordpress.org/ticket/21096
+			// This is hacky but works. Awaiting https://core.trac.wordpress.org/ticket/21096
 			global $wp_post_types;
 
 			$shop_page 	= get_post( wc_get_page_id( 'shop' ) );
@@ -425,7 +424,7 @@ class WC_Query {
 				$args['orderby']  = 'rand';
 			break;
 			case 'date' :
-				$args['orderby']  = 'date';
+				$args['orderby']  = 'date ID';
 				$args['order']    = $order == 'ASC' ? 'ASC' : 'DESC';
 			break;
 			case 'price' :
@@ -453,7 +452,7 @@ class WC_Query {
 	}
 
 	/**
-	 * WP Core doens't let us change the sort direction for invidual orderby params - http://core.trac.wordpress.org/ticket/17065.
+	 * WP Core doens't let us change the sort direction for invidual orderby params - https://core.trac.wordpress.org/ticket/17065.
 	 *
 	 * This lets us sort by meta value desc, and have a second orderby param.
 	 *
@@ -697,7 +696,3 @@ class WC_Query {
 		_deprecated_function( 'layered_nav_query', '2.6', '' );
 	}
 }
-
-endif;
-
-return new WC_Query();

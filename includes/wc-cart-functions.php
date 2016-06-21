@@ -73,7 +73,7 @@ function wc_add_to_cart_message( $products, $show_qty = false ) {
 		$show_qty = false;
 	}
 
-	if ( ! $show_qty ) {
+	if ( ! $show_qty && ! is_array( $products ) ) {
 		$products = array_fill_keys( array_values( $products ), 1 );
 	}
 
@@ -87,7 +87,7 @@ function wc_add_to_cart_message( $products, $show_qty = false ) {
 
 	// Output success messages
 	if ( 'yes' === get_option( 'woocommerce_cart_redirect_after_add' ) ) {
-		$return_to = apply_filters( 'woocommerce_continue_shopping_redirect', wp_get_referer() ? wp_get_referer() : home_url() );
+		$return_to = apply_filters( 'woocommerce_continue_shopping_redirect', wp_get_raw_referer() ? wp_validate_redirect( wp_get_raw_referer(), false ) : wc_get_page_permalink( 'shop' ) );
 		$message   = sprintf( '<a href="%s" class="button wc-forward">%s</a> %s', esc_url( $return_to ), esc_html__( 'Continue Shopping', 'woocommerce' ), esc_html( $added_text ) );
 	} else {
 		$message   = sprintf( '<a href="%s" class="button wc-forward">%s</a> %s', esc_url( wc_get_page_permalink( 'cart' ) ), esc_html__( 'View Cart', 'woocommerce' ), esc_html( $added_text ) );
@@ -206,12 +206,20 @@ function wc_cart_totals_taxes_total_html() {
  *
  * @access public
  * @param string $coupon
+ * @param bool $echo or return
  */
-function wc_cart_totals_coupon_label( $coupon ) {
-	if ( is_string( $coupon ) )
+function wc_cart_totals_coupon_label( $coupon, $echo = true ) {
+	if ( is_string( $coupon ) ) {
 		$coupon = new WC_Coupon( $coupon );
+	}
 
-	echo apply_filters( 'woocommerce_cart_totals_coupon_label', esc_html( __( 'Coupon:', 'woocommerce' ) . ' ' . $coupon->code ), $coupon );
+	$label = apply_filters( 'woocommerce_cart_totals_coupon_label', esc_html( __( 'Coupon:', 'woocommerce' ) . ' ' . $coupon->get_code() ), $coupon );
+
+	if ( $echo ) {
+		echo $label;
+	} else {
+		return $label;
+	}
 }
 
 /**
@@ -227,7 +235,7 @@ function wc_cart_totals_coupon_html( $coupon ) {
 
 	$value  = array();
 
-	if ( $amount = WC()->cart->get_coupon_discount_amount( $coupon->code, WC()->cart->display_cart_ex_tax ) ) {
+	if ( $amount = WC()->cart->get_coupon_discount_amount( $coupon->get_code(), WC()->cart->display_cart_ex_tax ) ) {
 		$discount_html = '-' . wc_price( $amount );
 	} else {
 		$discount_html = '';
@@ -235,13 +243,13 @@ function wc_cart_totals_coupon_html( $coupon ) {
 
 	$value[] = apply_filters( 'woocommerce_coupon_discount_amount_html', $discount_html, $coupon );
 
-	if ( $coupon->enable_free_shipping() ) {
+	if ( $coupon->get_free_shipping() ) {
 		$value[] = __( 'Free shipping coupon', 'woocommerce' );
 	}
 
 	// get rid of empty array elements
 	$value = array_filter( $value );
-	$value = implode( ', ', $value ) . ' <a href="' . esc_url( add_query_arg( 'remove_coupon', urlencode( $coupon->code ), defined( 'WOOCOMMERCE_CHECKOUT' ) ? wc_get_checkout_url() : wc_get_cart_url() ) ) . '" class="woocommerce-remove-coupon" data-coupon="' . esc_attr( $coupon->code ) . '">' . __( '[Remove]', 'woocommerce' ) . '</a>';
+	$value = implode( ', ', $value ) . ' <a href="' . esc_url( add_query_arg( 'remove_coupon', urlencode( $coupon->get_code() ), defined( 'WOOCOMMERCE_CHECKOUT' ) ? wc_get_checkout_url() : wc_get_cart_url() ) ) . '" class="woocommerce-remove-coupon" data-coupon="' . esc_attr( $coupon->get_code() ) . '">' . __( '[Remove]', 'woocommerce' ) . '</a>';
 
 	echo apply_filters( 'woocommerce_cart_totals_coupon_html', $value, $coupon );
 }
@@ -267,7 +275,7 @@ function wc_cart_totals_order_total_html() {
 
 		if ( ! empty( $tax_string_array ) ) {
 			$taxable_address = WC()->customer->get_taxable_address();
-			$estimated_text  = WC()->customer->is_customer_outside_base() && ! WC()->customer->has_calculated_shipping()
+			$estimated_text  = WC()->customer->is_customer_outside_base() && ! WC()->customer->get_calculated_shipping()
 				? sprintf( ' ' . __( 'estimated for %s', 'woocommerce' ), WC()->countries->estimated_for_prefix( $taxable_address[0] ) . WC()->countries->countries[ $taxable_address[0] ] )
 				: '';
 			$value .= '<small class="includes_tax">' . sprintf( __( '(includes %s)', 'woocommerce' ), implode( ', ', $tax_string_array ) . $estimated_text ) . '</small>';

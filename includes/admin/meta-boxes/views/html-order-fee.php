@@ -9,7 +9,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <tr class="fee <?php echo esc_attr( ! empty( $class ) ? $class : '' ); ?>" data-order_item_id="<?php echo esc_attr( $item->get_id() ); ?>">
-	<td class="check-column"><input type="checkbox" /></td>
 
 	<td class="thumb"><div></div></td>
 

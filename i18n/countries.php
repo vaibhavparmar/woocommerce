@@ -73,7 +73,7 @@ return array(
 	'CR' => __( 'Costa Rica', 'woocommerce' ),
 	'HR' => __( 'Croatia', 'woocommerce' ),
 	'CU' => __( 'Cuba', 'woocommerce' ),
-	'CW' => __( 'Cura&Ccedil;ao', 'woocommerce' ),
+	'CW' => __( 'Cura&ccedil;ao', 'woocommerce' ),
 	'CY' => __( 'Cyprus', 'woocommerce' ),
 	'CZ' => __( 'Czech Republic', 'woocommerce' ),
 	'DK' => __( 'Denmark', 'woocommerce' ),
@@ -261,7 +261,7 @@ return array(
 	'VN' => __( 'Vietnam', 'woocommerce' ),
 	'WF' => __( 'Wallis and Futuna', 'woocommerce' ),
 	'EH' => __( 'Western Sahara', 'woocommerce' ),
-	'WS' => __( 'Western Samoa', 'woocommerce' ),
+	'WS' => __( 'Samoa', 'woocommerce' ),
 	'YE' => __( 'Yemen', 'woocommerce' ),
 	'ZM' => __( 'Zambia', 'woocommerce' ),
 	'ZW' => __( 'Zimbabwe', 'woocommerce' )

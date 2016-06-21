@@ -178,11 +178,16 @@ class WC_Meta_Box_Order_Data {
 								echo ' (' . esc_html( $transaction_id ) . ')';
 							}
 						}
+
+						if ( $order->paid_date ) {
+							printf( ' ' . _x( 'on %s @ %s', 'on date at time', 'woocommerce' ), date_i18n( get_option( 'date_format' ), strtotime( $order->paid_date ) ), date_i18n( get_option( 'time_format' ), strtotime( $order->paid_date ) ) );
+						}
+
 						echo '. ';
 					}
 
 					if ( $ip_address = get_post_meta( $post->ID, '_customer_ip_address', true ) ) {
-						echo __( 'Customer IP', 'woocommerce' ) . ': ' . esc_html( $ip_address );
+						echo __( 'Customer IP', 'woocommerce' ) . ': <span class="woocommerce-Order-customerIP">' . esc_html( $ip_address ) . '</span>';
 					}
 				?></p>
 
@@ -198,7 +203,7 @@ class WC_Meta_Box_Order_Data {
 							if ( $order->has_status( 'pending' ) ) {
 								printf( '<a href="%s">%s &rarr;</a>',
 									esc_url( $order->get_checkout_payment_url() ),
-									__( 'Pay', 'woocommerce' )
+									__( 'Customer payment page', 'woocommerce' )
 								);
 							}
 						?></label>
@@ -414,7 +419,7 @@ class WC_Meta_Box_Order_Data {
 		// Ensure gateways are loaded in case they need to insert data into the emails
 		WC()->payment_gateways();
 		WC()->shipping();
-		
+
 		$order = wc_get_order( $post_id );
 		$order->set_customer_id( absint( $_POST['customer_user'] ) );
 		$order->set_transaction_id( wc_clean( $_POST['_transaction_id'] ) );

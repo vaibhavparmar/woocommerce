@@ -178,6 +178,9 @@ function woocommerce_settings_get_option( $option_name, $default = '' ) {
  * @param array $items Order items to save
  */
 function wc_save_order_items( $order_id, $items ) {
+	// Allow other plugins to check change in order items before they are saved
+	do_action( 'woocommerce_before_save_order_items', $order_id, $items );
+
 	global $wpdb;
 
 	$items = wc_clean( wp_unslash( $items ) );
@@ -288,25 +291,6 @@ function wc_save_order_items( $order_id, $items ) {
 	$order->calculate_totals();
 	$order->save();
 
-	// inform other plugins that the items have been saved
+	// Inform other plugins that the items have been saved
 	do_action( 'woocommerce_saved_order_items', $order_id, $items );
-}
-
-/**
- * Display a WooCommerce help tip.
- *
- * @since  2.5.0
- *
- * @param  string $tip        Help tip text
- * @param  bool   $allow_html Allow sanitized HTML if true or escape
- * @return string
- */
-function wc_help_tip( $tip, $allow_html = false ) {
-	if ( $allow_html ) {
-		$tip = wc_sanitize_tooltip( $tip );
-	} else {
-		$tip = esc_attr( $tip );
-	}
-
-	return '<span class="woocommerce-help-tip" data-tip="' . $tip . '"></span>';
 }

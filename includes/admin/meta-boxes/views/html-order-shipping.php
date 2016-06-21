@@ -10,7 +10,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <tr class="shipping <?php echo ( ! empty( $class ) ) ? $class : ''; ?>" data-order_item_id="<?php echo esc_attr( $item->get_id() ); ?>">
-	<td class="check-column"><input type="checkbox" /></td>
 
 	<td class="thumb"><div></div></td>
 

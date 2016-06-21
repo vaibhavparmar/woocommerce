@@ -10,7 +10,7 @@
  * happen. When this occurs the version of the template file will be bumped and
  * the readme will list any important changes.
  *
- * @see 	    http://docs.woothemes.com/document/template-structure/
+ * @see 	    https://docs.woothemes.com/document/template-structure/
  * @author 		WooThemes
  * @package 	WooCommerce/Templates/Emails
  * @version     2.6.0
@@ -41,7 +41,7 @@ foreach ( $items as $item_id => $item ) :
 				}
 
 				// allow other plugins to add additional product information here
-				do_action( 'woocommerce_order_item_meta_start', $item_id, $item, $order );
+				do_action( 'woocommerce_order_item_meta_start', $item_id, $item, $order, $plain_text );
 
 				wc_display_item_meta( $item );
 
@@ -50,7 +50,7 @@ foreach ( $items as $item_id => $item ) :
 				}
 
 				// allow other plugins to add additional product information here
-				do_action( 'woocommerce_order_item_meta_end', $item_id, $item, $order );
+				do_action( 'woocommerce_order_item_meta_end', $item_id, $item, $order, $plain_text );
 
 			?></td>
 			<td class="td" style="text-align:left; vertical-align:middle; border: 1px solid #eee; font-family: 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;"><?php echo apply_filters( 'woocommerce_email_order_item_quantity', $item['qty'], $item ); ?></td>
