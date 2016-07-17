@@ -136,7 +136,7 @@ final class WooCommerce {
 
 	/**
 	 * Auto-load in-accessible properties on demand.
-	 * @param mixed $key
+	 * @param  mixed $key
 	 * @return mixed
 	 */
 	public function __get( $key ) {
@@ -191,8 +191,8 @@ final class WooCommerce {
 	/**
 	 * Define constant if not already set.
 	 *
-	 * @param  string $name
-	 * @param  string|bool $value
+	 * @param string      $name
+	 * @param string|bool $value
 	 */
 	private function define( $name, $value ) {
 		if ( ! defined( $name ) ) {
@@ -295,7 +295,7 @@ final class WooCommerce {
 		include_once( 'includes/class-wc-customer.php' );                       // Customer class
 		include_once( 'includes/class-wc-shortcodes.php' );                     // Shortcodes class
 		include_once( 'includes/class-wc-embed.php' );                          // Embeds
-    include_once( 'includes/class-wc-data-structurer.php' );                // Data Structurer class
+	include_once( 'includes/class-wc-data-structurer.php' );                // Data Structurer class
 	}
 
 	/**
@@ -323,15 +323,15 @@ final class WooCommerce {
 
 		// Session class, handles session data for users - can be overwritten if custom handler is needed.
 		if ( $this->is_request( 'frontend' ) || $this->is_request( 'cron' ) ) {
-			$session_class  = apply_filters( 'woocommerce_session_handler', 'WC_Session_Handler' );
-			$this->session  = new $session_class();
+			$session_class = apply_filters( 'woocommerce_session_handler', 'WC_Session_Handler' );
+			$this->session = new $session_class();
 		}
 
 		// Classes/actions loaded for the frontend and for ajax requests.
 		if ( $this->is_request( 'frontend' ) ) {
-			$this->cart             = new WC_Cart();                              // Cart class, stores the cart contents
-			$this->customer         = new WC_Customer();                          // Customer class, handles data such as customer location
-      $this->data_structurer  = new WC_Data_Structurer();                   // Microdata class, generates and encodes a JSON-LD
+			$this->cart            = new WC_Cart();                              // Cart class, stores the cart contents
+			$this->customer        = new WC_Customer();                          // Customer class, handles data such as customer location
+		$this->data_structurer = new WC_Data_Structurer();                   // Microdata class, generates and encodes a JSON-LD
 		}
 
 		$this->load_webhooks();
@@ -386,8 +386,8 @@ final class WooCommerce {
 	 */
 	private function add_image_sizes() {
 		$shop_thumbnail = wc_get_image_size( 'shop_thumbnail' );
-		$shop_catalog	= wc_get_image_size( 'shop_catalog' );
-		$shop_single	= wc_get_image_size( 'shop_single' );
+		$shop_catalog   = wc_get_image_size( 'shop_catalog' );
+		$shop_single    = wc_get_image_size( 'shop_single' );
 
 		add_image_size( 'shop_thumbnail', $shop_thumbnail['width'], $shop_thumbnail['height'], $shop_thumbnail['crop'] );
 		add_image_size( 'shop_catalog', $shop_catalog['width'], $shop_catalog['height'], $shop_catalog['crop'] );
@@ -429,8 +429,8 @@ final class WooCommerce {
 	/**
 	 * Return the WC API URL for a given request.
 	 *
-	 * @param string $request
-	 * @param mixed $ssl (default: null)
+	 * @param  string $request
+	 * @param  mixed  $ssl     (default: null)
 	 * @return string
 	 */
 	public function api_request_url( $request, $ssl = null ) {
@@ -518,6 +518,7 @@ final class WooCommerce {
 	public function mailer() {
 		return WC_Emails::instance();
 	}
+
 }
 
 endif;
